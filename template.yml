@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: cloudformation macro template 0.1
+Transform:
+  - AWS::Serverless-2016-10-31
+  - SubReplicate-production-V1
+
+
+Parameters:
+  Environment:
+    Type: String
+  MacroName:
+    Type: String
+  CodeLanguage:
+    Type: String
+    Default: python3.6
+
+
+Conditions:
+  IsProduction: !Equals [ !Ref Environment, production ]
+
+Resources:
+  MacroRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+
+  MacroFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: _build/src
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Environment
+      Handler: main.lambda_handler
+      Role: !GetAtt MacroRole.Arn
+      Runtime: !Ref CodeLanguage
+      Timeout: 60
+
+
+  MacroVersion:
+    Type: AWS::CloudFormation::Stack
+    Condition: IsProduction
+    SubReplicate:
+      Fn::Transform:
+        Name: AWS::Include
+        Parameters:
+          Location: _build/versions.yml
+    Properties:
+      TemplateURL: version.yml
+      Parameters:
+        Environment: !Ref Environment
+        MacroName: !Ref MacroName
+        MacroVersion: !Sub ${version_name}
+        MacroFunctionArn: !GetAtt MacroFunction.Arn
+
+
+  MacroLatest:
+    Type: AWS::CloudFormation::Macro
+    Properties:
+      FunctionName: !Sub ${MacroFunction.Arn}:$LATEST
+      Name: !Sub ${MacroName}-${Environment}
+
+
+  InvokeMacroPermission:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt MacroFunction.Arn
+      Principal: "*"

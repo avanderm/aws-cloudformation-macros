@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: cloudformation macro version template 0.1
+
+
+Parameters:
+  Environment:
+    Type: String
+  MacroName:
+    Type: String
+  MacroFunctionArn:
+    Type: String
+  MacroVersion:
+    Type: String
+
+
+Resources:
+  Version:
+    Type: AWS::Lambda::Version
+    Properties:
+      FunctionName: !Ref MacroFunctionArn
+
+
+  Alias:
+    Type: AWS::Lambda::Alias
+    Properties:
+      FunctionName: !Ref MacroFunctionArn
+      FunctionVersion: !GetAtt Version.Version
+      Name: !Ref MacroVersion
+
+
+  Macro:
+    Type: AWS::CloudFormation::Macro
+    Properties:
+      FunctionName: !Ref Alias
+      Name: !Sub ${MacroName}-${Environment}-${MacroVersion}

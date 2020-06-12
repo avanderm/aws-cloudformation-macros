@@ -1,0 +1,4 @@
+-r requirements.txt
+
+cfn_flip == 1.2.0
+pytest

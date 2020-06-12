@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: 2010-09-09
+Mappings:
+  roles:
+    step-function:
+      service: states
+      description: Step Function IAM role
+    fargate:
+      service: ecs
+Resources:
+  Role:
+    Type: AWS::IAM::Role
+    SubReplicate:
+      Replicates: roles
+      Defaults:
+        resource_tag: foo
+    Properties:
+      Description: !Ref repl:description
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - !Sub ${repl:service}.amazonaws.com
+      Tags:
+        - Key: sometag
+          Value: !Ref repl:resource_tag
+
+  StaticRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - lambda.amazonaws.com
