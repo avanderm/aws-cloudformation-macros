@@ -22,13 +22,15 @@ class TestLambda:
                     'Resources': {
                         'BaseStack': {
                             'Type': 'AWS::CloudFormation::Stack',
-                            'SubReplicate': 'stacks',
+                            'Replicates': {
+                                'Elements': 'stacks'
+                            },
                             'Properties': {
                                 'TemplateURL': {
                                     'Fn::Sub': [
-                                        '${url}-${version}',
+                                        '${repl_url}-${repl_version}',
                                         {
-                                            'version': 1
+                                            'repl_version': 1
                                         }
                                     ]
                                 }
@@ -67,10 +69,10 @@ class TestLambda:
                         'Properties': {
                             'TemplateURL': {
                                 'Fn::Sub': [
-                                    '${url}-${version}',
+                                    '${repl_url}-${repl_version}',
                                     {
-                                        'url': 'production.yml',
-                                        'version': 2
+                                        'repl_url': 'production.yml',
+                                        'repl_version': 2
                                     }
                                 ]
                             }
@@ -81,10 +83,10 @@ class TestLambda:
                         'Properties': {
                             'TemplateURL': {
                                 'Fn::Sub': [
-                                    '${url}-${version}',
+                                    '${repl_url}-${repl_version}',
                                     {
-                                        'url': 'development.yml',
-                                        'version': 1
+                                        'repl_url': 'development.yml',
+                                        'repl_version': 1
                                     }
                                 ]
                             }
@@ -109,21 +111,23 @@ class TestLambda:
                     'Resources': {
                         'BaseStack': {
                             'Type': 'AWS::CloudFormation::Stack',
-                            'SubReplicate': {
-                                'one': {
-                                    'url': 'production.yml',
-                                    'version': 2
-                                },
-                                'two': {
-                                    'url': 'development.yml'
+                            'Replicates': {
+                                'Elements': {
+                                    'one': {
+                                        'url': 'production.yml',
+                                        'version': 2
+                                    },
+                                    'two': {
+                                        'url': 'development.yml'
+                                    }
                                 }
                             },
                             'Properties': {
                                 'TemplateURL': {
                                     'Fn::Sub': [
-                                        '${url}-${version}',
+                                        '${repl_url}-${repl_version}',
                                         {
-                                            'version': 1
+                                            'repl_version': 1
                                         }
                                     ]
                                 }
@@ -140,6 +144,8 @@ class TestLambda:
             }, None
         )
 
+        print(result)
+
         assert result == {
             'requestId': 'one',
             'status': 'success',
@@ -151,10 +157,10 @@ class TestLambda:
                         'Properties': {
                             'TemplateURL': {
                                 'Fn::Sub': [
-                                    '${url}-${version}',
+                                    '${repl_url}-${repl_version}',
                                     {
-                                        'url': 'production.yml',
-                                        'version': 2
+                                        'repl_url': 'production.yml',
+                                        'repl_version': 2
                                     }
                                 ]
                             }
@@ -165,10 +171,10 @@ class TestLambda:
                         'Properties': {
                             'TemplateURL': {
                                 'Fn::Sub': [
-                                    '${url}-${version}',
+                                    '${repl_url}-${repl_version}',
                                     {
-                                        'url': 'development.yml',
-                                        'version': 1
+                                        'repl_url': 'development.yml',
+                                        'repl_version': 1
                                     }
                                 ]
                             }

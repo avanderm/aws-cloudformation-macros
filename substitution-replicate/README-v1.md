@@ -9,7 +9,7 @@ CloudFormation stack using the substitution replicate to replicate an `AWS::Clou
 ```yaml
 AWSTemplateFormatVersion: 2010-09-09
 Transform:
-    - SubReplicate-production
+    - SubReplicate
 
 Mappings:
     stacks:
@@ -34,7 +34,7 @@ In the example above, the `BaseStack` resource will be replicated into two new r
 ```yaml
 AWSTemplateFormatVersion: 2010-09-09
 Transform:
-    - SubReplicate-production
+    - SubReplicate
 
 Resources:
     BaseStackStackOne:
@@ -55,7 +55,7 @@ Parameters defined in the `Mappings` section will be substituted into the base r
 ```yaml
 AWSTemplateFormatVersion: 2010-09-09
 Transform:
-    - SubReplicate-production
+    - SubReplicate
 
 Resources:
     BaseStack:
@@ -76,7 +76,7 @@ Resources:
 ```yaml
 AWSTemplateFormatVersion: 2010-09-09
 Transform:
-    - SubReplicate-production
+    - SubReplicate
 
 Resources:
     BaseStack:
@@ -108,7 +108,7 @@ The scope of the substitute replicator is at the global level. Since it replicat
 
 ```yml
 Transform:
-    - SubReplicate-production
+    - SubReplicate
 ```
 
 ## Tests

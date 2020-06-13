@@ -49,7 +49,8 @@ class Substitutor:
         else:
             expression, supplied = cloudformation, {}
 
-        variables = re.findall(r'\${repl:(.+?)}', expression)
+        print(expression)
+        variables = re.findall(r'\${repl_(.+?)}', expression)
 
         return expression, variables, supplied
 
@@ -66,7 +67,7 @@ class Substitutor:
 
         for variable in variables:
             if variable in replication_variables:
-                supplied[f'repl:{variable}'] = replication_variables[variable]
+                supplied[f'repl_{variable}'] = replication_variables[variable]
 
         return [ expression, supplied ]
 
@@ -83,15 +84,18 @@ class Substitutor:
         for k, v in cf_dict.items():
             if k == 'Fn::Sub':
                 cf_dict[k] = self.substitute(replication_variables, v)
-            elif k == 'Ref' and isinstance(v, dict):
-                cf_dict[k] = self.traverse(replication_variables, v)
+            # elif k == 'Ref' and isinstance(v, dict):
+            #     cf_dict[k] = self.traverse(replication_variables, v)
             elif k == 'Ref':
-                search = re.search('^repl:(.+)$', v)
+                search = re.search('^repl_(.+)$', v)
 
-                if search and search.group(1) in replication_variables:
-                    return replication_variables[search.group(1)]
+                if search:
+                    if search.group(1) in replication_variables:
+                        return replication_variables[search.group(1)]
+                    else:
+                        cf_dict[k] = 'AWS::NoValue'
                 else:
-                    cf_dict[k] = 'AWS::NoValue'
+                    cf_dict[k] = v
             else:
                 cf_dict[k] = self.traverse(replication_variables, v)
 
@@ -105,17 +109,17 @@ class Substitutor:
         else:
             return cloudformation
 
-    def process(self, replications):
+    def process(self, replicates):
         resources = {}
 
-        if not replications:
+        if not replicates:
             return resources
 
-        for replication_name, substitutions in replications.items():
+        for replication_name, substitutions in replicates.items():
             name = self.name(replication_name)
             replication_variables = collections.ChainMap(substitutions, self.repl_defaults)
 
-            resource = self.substitute(replication_variables, copy.deepcopy(self.base_resource))
+            resource = self.traverse(replication_variables, copy.deepcopy(self.base_resource))
 
             resources[name] = resource
 
@@ -123,25 +127,26 @@ class Substitutor:
 
 
 def is_tagged(resource : tuple):
-    return 'SubReplicate' in resource[1]
+    return 'Replicates' in resource[1]
 
 
 def lambda_handler(event, context):
+    print(event)
     fragment = event['fragment']
     logger.log_message(logging.INFO, fragment)
 
     resources = fragment['Resources'].copy()
 
     for name, resource in filter(is_tagged, resources.items()):
-        params = resource.pop('SubReplicate')
-        replications = params['Replications']
+        params = resource.pop('Replicates')
+        replicates = params['Elements']
         defaults = params.get('Defaults', {})
 
         # check if we need to get data from the Mappings section
-        if isinstance(replications, str):
-            replications = fragment['Mappings'][replications]
+        if isinstance(replicates, str):
+            replicates = fragment['Mappings'][replicates]
 
-        resources = Substitutor(name, resource, defaults).process(replications)
+        resources = Substitutor(name, resource, defaults).process(replicates)
 
         # add replicated resources
         fragment['Resources'].update(resources)
@@ -151,11 +156,14 @@ def lambda_handler(event, context):
 
     logger.log_message(logging.INFO, fragment)
 
-    return {
+    processed = {
         'requestId': event['requestId'],
         'status': 'success',
         'fragment': fragment
     }
+
+    print(processed)
+    return processed
 
 
 if __name__ == '__main__':
@@ -165,7 +173,7 @@ if __name__ == '__main__':
             'Resources': {
                 'BaseStack': {
                     'Type': 'AWS::CloudFormation::Stack',
-                    'Replicate': {
+                    'Replicates': {
                         'accommodation': {
                             'Parameters': {
                                 'Variable1': 'foo',

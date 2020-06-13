@@ -37,7 +37,7 @@ class TestSubstitutor:
         the sub command is given in list form, the first entry the string expression, the second
         entry a dictionary.
 
-        Replication variables are prefixed by repl: in the string expression. Any replication
+        Replication variables are prefixed by repl_ in the string expression. Any replication
         variables already present in the dictionary are overwritten if present in the dictionary.
         """
         obj = Substitutor('Base', None)
@@ -48,19 +48,19 @@ class TestSubstitutor:
         }
 
         cloudformation = [
-            '${repl:variable1}-${repl:variable2}-${variable3}',
+            '${repl_variable1}-${repl_variable2}-${variable3}',
             {
-                'repl:variable2': 'value4',
+                'repl_variable2': 'value4',
                 'variable3': 'value3'
             }
         ]
         result = obj.substitute(variables, cloudformation)
 
         assert result == [
-            '${repl:variable1}-${repl:variable2}-${variable3}',
+            '${repl_variable1}-${repl_variable2}-${variable3}',
             {
-                'repl:variable1': 'value1',
-                'repl:variable2': 'value2',
+                'repl_variable1': 'value1',
+                'repl_variable2': 'value2',
                 'variable3': 'value3'
             }
         ]
@@ -78,14 +78,14 @@ class TestSubstitutor:
             'variable2': 'value2'
         }
 
-        cloudformation = '${repl:variable1}-${repl:variable2}-${variable3}'
+        cloudformation = '${repl_variable1}-${repl_variable2}-${variable3}'
         result = obj.substitute(variables, cloudformation)
 
         assert result == [
-            '${repl:variable1}-${repl:variable2}-${variable3}',
+            '${repl_variable1}-${repl_variable2}-${variable3}',
             {
-                'repl:variable1': 'value1',
-                'repl:variable2': 'value2'
+                'repl_variable1': 'value1',
+                'repl_variable2': 'value2'
             }
         ]
 
@@ -104,12 +104,12 @@ class TestSubstitutor:
         }
 
         cloudformation = [
-            '${repl:variable1}-${repl:variable2}-${variable3}',
+            '${repl_variable1}-${repl_variable2}-${variable3}',
             {
-                'repl:variable2': 'value4',
+                'repl_variable2': 'value4',
                 'variable3': {
                     'Fn::ImportValue': {
-                        'Fn::Sub': 'again-${repl:variable1}'
+                        'Fn::Sub': 'again-${repl_variable1}'
                     }
                 }
             }
@@ -117,16 +117,16 @@ class TestSubstitutor:
         result = obj.substitute(variables, cloudformation)
 
         assert result == [
-            '${repl:variable1}-${repl:variable2}-${variable3}',
+            '${repl_variable1}-${repl_variable2}-${variable3}',
             {
-                'repl:variable1': 'value1',
-                'repl:variable2': 'value2',
+                'repl_variable1': 'value1',
+                'repl_variable2': 'value2',
                 'variable3': {
                     'Fn::ImportValue': {
                         'Fn::Sub': [
-                            'again-${repl:variable1}',
+                            'again-${repl_variable1}',
                             {
-                                'repl:variable1': 'value1'
+                                'repl_variable1': 'value1'
                             }
                         ]
                     }
@@ -134,50 +134,45 @@ class TestSubstitutor:
             }
         ]
 
-    def test_traverse_list(self):
+    def test_traverse_list(self, replications):
         obj = Substitutor('Base', None)
 
         result = obj.traverse_list(replications['resource_one'], [
             {
-                'Fn::Sub': '${repl:variable1}-${repl:variable2}'
+                'Fn::Sub': '${repl_variable1}-${repl_variable2}'
             },
             {
-                'Fn::Sub': '${repl:variable2}-${repl:variable1}'
+                'Fn::Sub': '${repl_variable2}-${repl_variable1}'
             }
         ])
 
-        assert base == {
-            'Type': 'AWS::Service::Resource',
-            'Properties': {
-                'Property1': [
+        assert result == [
+            {
+                'Fn::Sub': [
+                    '${repl_variable1}-${repl_variable2}',
                     {
-                        'Fn::Sub': [
-                            '${repl:variable1}-${repl:variable2}',
-                            {
-                                'repl:variable1': 'foo',
-                                'repl:variable2': 'bar'
-                            }
-                        ]
-                    },
+                        'repl_variable1': 'foo',
+                        'repl_variable2': 'bar'
+                    }
+                ]
+            },
+            {
+                'Fn::Sub': [
+                    '${repl_variable2}-${repl_variable1}',
                     {
-                        'Fn::Sub': [
-                            '${repl:variable2}-${repl:variable1}',
-                            {
-                                'repl:variable1': 'foo',
-                                'repl:variable2': 'bar'
-                            }
-                        ]
+                        'repl_variable1': 'foo',
+                        'repl_variable2': 'bar'
                     }
                 ]
             }
-        }
+        ]
 
     def test_traverse(self, replications):
         base = {
             'Type': 'AWS::Service::Resource',
             'Properties': {
                 'Property1': {
-                    'Fn::Sub': '${repl:variable1}-${repl:variable2}'
+                    'Fn::Sub': '${repl_variable1}-${repl_variable2}'
                 }
             }
         }
@@ -191,10 +186,10 @@ class TestSubstitutor:
             'Properties': {
                 'Property1': {
                     'Fn::Sub': [
-                        '${repl:variable1}-${repl:variable2}',
+                        '${repl_variable1}-${repl_variable2}',
                         {
-                            'repl:variable1': 'foo',
-                            'repl:variable2': 'bar'
+                            'repl_variable1': 'foo',
+                            'repl_variable2': 'bar'
                         }
                     ]
                 }
@@ -207,9 +202,9 @@ class TestSubstitutor:
             'Properties': {
                 'Property1': {
                     'Fn::Sub': [
-                        '${repl:variable1}-${repl:variable2}',
+                        '${repl_variable1}-${repl_variable2}',
                         {
-                            'repl:variable2': 'test'
+                            'repl_variable2': 'test'
                         }
                     ]
                 }
@@ -226,10 +221,10 @@ class TestSubstitutor:
                 'Properties': {
                     'Property1': {
                         'Fn::Sub': [
-                            '${repl:variable1}-${repl:variable2}',
+                            '${repl_variable1}-${repl_variable2}',
                             {
-                                'repl:variable1': 'foo',
-                                'repl:variable2': 'bar'
+                                'repl_variable1': 'foo',
+                                'repl_variable2': 'bar'
                             }
                         ]
                     }
@@ -240,10 +235,10 @@ class TestSubstitutor:
                 'Properties': {
                     'Property1': {
                         'Fn::Sub': [
-                            '${repl:variable1}-${repl:variable2}',
+                            '${repl_variable1}-${repl_variable2}',
                             {
-                                'repl:variable1': 'fuu',
-                                'repl:variable2': 'bor'
+                                'repl_variable1': 'fuu',
+                                'repl_variable2': 'bor'
                             }
                         ]
                     }

@@ -2,7 +2,6 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: cloudformation macro template 0.1
 Transform:
   - AWS::Serverless-2016-10-31
-  - SubReplicate
 
 
 Parameters:
@@ -39,27 +38,11 @@ Resources:
       Timeout: 60
 
 
-  MacroVersion:
-    Type: AWS::CloudFormation::Stack
-    Replicates:
-      Elements:
-        Fn::Transform:
-          Name: AWS::Include
-          Parameters:
-            Location: _build/versions.yml
-    Properties:
-      TemplateURL: version.yml
-      Parameters:
-        MacroName: !Ref MacroName
-        MacroVersion: !Sub ${repl_version_name}
-        MacroFunctionArn: !GetAtt MacroFunction.Arn
-
-
   MacroLatest:
     Type: AWS::CloudFormation::Macro
     Properties:
       FunctionName: !Sub ${MacroFunction.Arn}:$LATEST
-      Name: !Ref MacroName
+      Name: !Sub ${MacroName}
 
 
   InvokeMacroPermission:

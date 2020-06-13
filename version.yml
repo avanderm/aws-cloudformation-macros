@@ -3,8 +3,6 @@ Description: cloudformation macro version template 0.1
 
 
 Parameters:
-  Environment:
-    Type: String
   MacroName:
     Type: String
   MacroFunctionArn:
@@ -32,4 +30,4 @@ Resources:
     Type: AWS::CloudFormation::Macro
     Properties:
       FunctionName: !Ref Alias
-      Name: !Sub ${MacroName}-${Environment}-${MacroVersion}
+      Name: !Sub ${MacroName}-${MacroVersion}

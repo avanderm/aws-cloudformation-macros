@@ -7,13 +7,13 @@
 The Makefile can be reused for any macro; specify the environment, the folder containing the macro and the macro name to deploy:
 
 ```bash
-ENVIRONMENT=<environment> MACRO_PATH=<dir_to_macro> MACRO_NAME=<macro_name> make deploy
+MACRO_PATH=<dir_to_macro> MACRO_NAME=<macro_name> make deploy
 ```
 
-This will deploy the macro under the naming convention `<macro_name>-<environment>`. For example, the resource replicator macro is deployed for the production environment as follows
+This will deploy the macro under the naming convention `<macro_name>`. For example, the substitution replicator macro is deployed as follows:
 
 ```bash
-ENVIRONMENT=production MACRO_PATH=resource-replicate MACRO_NAME=ResourceReplicate make deploy
+MACRO_PATH=resource-replicate MACRO_NAME=ResourceReplicate make deploy
 ```
 
 and is used in any CloudFormation template with
@@ -21,12 +21,12 @@ and is used in any CloudFormation template with
 ```yaml
 AWSTemplateVersion: 2010-09-09
 Transform:
-    - SubReplicate-production
+    - SubReplicate
 ```
 
 ## Versioning
 
-A `versions.yml` file can be used in each macro folder to specify macro versions for the production environment. The file is of the form:
+A `versions.yml` file can be used in each macro folder to specify macro versions. The file is of the form:
 
 ```yaml
 V1:
@@ -35,4 +35,4 @@ V2:
     version_name: V2
 ```
 
-Versions can be added and removed (if no CloudFormation stack needs it anymore). These versioned macros will be available under the convention `<macro_name>-<environment>-<version_name>`. Once a macro version is made it is static, unlike the `<macro_name>-<environment>` macro. This will ensure that existing stacks relying on a versioned macro will not break due to code changes.
+Versions can be added and removed (if no CloudFormation stack needs it anymore). These versioned macros will be available under the convention `<macro_name>-<version_name>`. Once a macro version is made it is static, unlike the `<macro_name>` macro. This will ensure that existing stacks relying on a versioned macro will not break due to code changes.

@@ -9,12 +9,12 @@ Mappings:
 Resources:
   Role:
     Type: AWS::IAM::Role
-    SubReplicate:
-      Replicates: roles
+    Replicates:
+      Elements: roles
       Defaults:
         resource_tag: foo
     Properties:
-      Description: !Ref repl:description
+      Description: !Ref repl_description
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -23,10 +23,10 @@ Resources:
               - sts:AssumeRole
             Principal:
               Service:
-                - !Sub ${repl:service}.amazonaws.com
+                - !Sub ${repl_service}.amazonaws.com
       Tags:
         - Key: sometag
-          Value: !Ref repl:resource_tag
+          Value: !Ref repl_resource_tag
 
   StaticRole:
     Type: AWS::IAM::Role

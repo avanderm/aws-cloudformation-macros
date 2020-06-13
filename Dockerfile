@@ -1,4 +1,4 @@
-FROM lambci/lambda:build-python3.6
+FROM lambci/lambda:build-python3.7
 
 ENV BUILD_DIR _build
 ARG MACRO_PATH
@@ -12,6 +12,7 @@ ADD logger.py ${BUILD_DIR}/src
 
 RUN pip install --upgrade pip -r ${BUILD_DIR}/requirements.txt --target ${BUILD_DIR}
 
+ADD bootstrap.yml .
 ADD template.yml .
 ADD version.yml .
 ADD Makefile .

@@ -2,8 +2,8 @@ AWSTemplateFormatVersion: 2010-09-09
 Resources:
   Role:
     Type: AWS::IAM::Role
-    SubReplicate:
-      Replicates:
+    Replicates:
+      Elements: {}
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -13,7 +13,7 @@ Resources:
               - sts:AssumeRole
             Principal:
               Service:
-                - !Sub ${repl:service}.amazonaws.com
+                - !Sub ${repl_service}.amazonaws.com
 
   StaticRole:
     Type: AWS::IAM::Role

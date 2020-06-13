@@ -1,17 +1,17 @@
-PROJECT=cloudformation
-
-ifndef ENVIRONMENT
-	ENVIRONMENT=$(USER)
+ifndef AWS_PROFILE
+	AWS_PROFILE=default
+endif
+ifndef ARTIFACT_BUCKET
+	$(info WARNING: ARTIFACT_BUCKET has to be passed as a parameter)
 endif
 ifndef MACRO_NAME
 	$(info WARNING: MACRO_NAME has to be passed as a parameter)
 endif
 
-STACK=$(DOMAIN)-macro-$(MACRO_NAME)-$(ENVIRONMENT)
+STACK=macro-$(MACRO_NAME)
 
 BUILD_DIR=_build
 
-CF_TEMPLATE=template.yml
 CF_PACKAGED=packaged.yml
 CF_LOCATION=$(ARTIFACT_BUCKET)
 
@@ -19,18 +19,31 @@ build:
 	docker build \
 		--build-arg "MACRO_PATH=$(MACRO_PATH)" \
 		--build-arg "MACRO_NAME=$(MACRO_NAME)" \
-		-t $(MACRO_PATH)-$(ENVIRONMENT) .
+		-t $(MACRO_PATH) .
 
-deploy:	clean build
-	docker run \
-		-e "ENVIRONMENT=$(ENVIRONMENT)" \
-		-e "MACRO_NAME=$(MACRO_NAME)" \
+bootstrap: clean build
+	-docker run \
+		-e "ARTIFACT_BUCKET=$(ARTIFACT_BUCKET)" \
+		-e "AWS_PROFILE=$(AWS_PROFILE)" \
+		-e "MACRO_NAME=SubReplicate" \
+		-e "CF_TEMPLATE=bootstrap.yml" \
 		-v $(HOME)/.aws:/root/.aws \
 		--rm \
-		-it $(MACRO_PATH)-$(ENVIRONMENT) make cloudformation-package cloudformation-deploy
+		-it substitution-replicate make cloudformation-package cloudformation-deploy
+
+deploy:	clean build bootstrap
+	docker run \
+		-e "MACRO_NAME=$(MACRO_NAME)" \
+		-e "AWS_PROFILE=$(AWS_PROFILE)" \
+		-e "ARTIFACT_BUCKET=$(ARTIFACT_BUCKET)" \
+		-e "CF_TEMPLATE=template.yml" \
+		-v $(HOME)/.aws:/root/.aws \
+		--rm \
+		-it $(MACRO_PATH) make cloudformation-package cloudformation-deploy
 
 cloudformation-package:
 	aws cloudformation package \
+		--profile $(AWS_PROFILE) \
 		--template-file $(CF_TEMPLATE) \
 		--s3-bucket $(CF_LOCATION) \
 		--s3-prefix packages \
@@ -38,18 +51,16 @@ cloudformation-package:
 
 cloudformation-deploy:
 	aws cloudformation deploy \
+		--profile $(AWS_PROFILE) \
 		--template-file $(CF_PACKAGED) \
 		--stack-name $(STACK) \
 		--capabilities CAPABILITY_IAM \
 		--parameter-overrides \
-			Environment=$(ENVIRONMENT) \
-			MacroName=$(MACRO_NAME) \
-		--tags \
-			Environment=$(ENVIRONMENT) \
-			Project=$(PROJECT)
+			MacroName=$(MACRO_NAME)
 
 delete:
 	aws cloudformation delete-stack \
+		--profile $(AWS_PROFILE) \
 		--stack-name $(STACK)
 
 clean:
